@@ -1,41 +1,56 @@
+require_relative 'coordinate.rb'
+require_relative 'compass'
+
 class Rover
   attr_reader :message
-  @message = ''
   def initialize(x, y, direction)
-    @current_x = Integer(x)
-    @current_y = Integer(y)
-    @direction = Direction.new.choose_side(direction)
+    @coordinate = Coordinate.new(x, y)
+    @compass = Compass.new
+    @compass.caliberate(direction)
   end
 
   def follow_instruction(instruction)
     case instruction
     when "M"
-      self.move
+      move
     when "L"
-      self.turn_left
+      turn_left
     when "R"
-      self.turn_right
+      turn_right
+    end
+  end
+
+  def turn_left
+    @compass.rotate_anticlockwise
+  end
+
+  def turn_right
+    @compass.rotate_clockwise
+  end
+
+  def move
+    unless defined?(@avaible_zone) && @avaible_zone.in_area?(@coordinate.x,@coordinate.y)
+      @message = 'I am going to get lost'
+    end
+    case @compass.current_direction
+    when "N"
+      @coordinate.increment_y
+    when "S"
+      @coordinate.decrement_y
+    when "E"
+      @coordinate.increment_x
+    when "W"
+      @coordinate.decrement_x
+    else
+      raise('Unsupported value for direction')
     end
   end
 
   def current_position
-    [@current_x, @current_y, @direction.string_name].join(' ')
+    [@coordinate.x, @coordinate.y, @compass.current_direction].join(' ')
   end
 
-  def move
-    @current_x, @current_y = @direction.move(@current_x, @current_y)
-    unless defined?(@available_area) && @available_area.in_area?(@current_x, @current_y)
-      @message = "I am going to get lost"
-    end
-  end
-  def turn_left
-    @direction = @direction.turn_left
-  end
-  def turn_right
-    @direction = @direction.turn_right
-  end
   def add_zone_limit(area)
-    @available_area = area
+    @avaible_zone=area
   end
 end
-
